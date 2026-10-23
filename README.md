@@ -67,7 +67,7 @@ thinking and OpenBrain remembers.
 
 ## What the plans for OpenBrain are
 
-This won't be another memory layer for AI Agents. It will be a fully functional operations layer where work done by all AI Agents and assistants will show up on the dashboards, both agents and the user will be informed about everything.
+This won't be another memory layer for AI Agents. It will be a fully functional operations layer where work done by all AI Agents and assistants will show up on the dashboard, both agents and the user will be informed about everything.
 Everyone can use and edit OpenBrain however if a use case is found, I would appreciate if it's shared here so more people can benefit.
 
 ## Installation
