@@ -2,7 +2,7 @@
 
 **Not another AI memory layer** 
 
-OpenBrain is small self-hosted shared project context layer for humans and AI agents.
+OpenBrain is a small self-hosted shared project context layer for humans and AI agents.
 Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
 agent can read and write, so every agent knows what each project is, where the
 work stands and what changed, without syncing code between machines.
