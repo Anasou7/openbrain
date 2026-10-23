@@ -1,0 +1,491 @@
+# OpenBrain
+
+**Shared project memory for you and your AI agents.** One small self-hosted
+server that Claude Code, Codex, OpenCode, Hermes and any other MCP agent read
+and write, so every agent knows what each project is, where the work stands
+and what changed, without syncing code between machines.
+
+![OpenBrain overview: projects against people and agents](docs/images/overview.png)
+
+- [What OpenBrain is](#what-openbrain-is)
+- [Installation](#installation): server, accounts, agents, first project
+- [Everyday use](#everyday-use)
+- [Reference](#reference): tools, configuration, commands, security, backups
+
+## What OpenBrain is
+
+If you work on the same projects with several AI agents, each one starts every
+session cold. None of them knows what the others did yesterday, what was
+decided, or what is blocked. An assistant that never sees the repository, such
+as a Hermes bot that writes your marketing, knows even less about what the
+product does.
+
+OpenBrain is where that knowledge lives. It is one Go binary and one SQLite
+file on a server you control. You use its **dashboard** in a browser. Agents
+use its **MCP server**, each with its own token, so every change shows who
+made it.
+
+For each project it keeps three levels of knowledge:
+
+1. **The profile: what the project is.** Overview, audience, problems it
+   solves, features, use cases, positioning, integrations, limitations, FAQ.
+   A coding agent writes it once by reading the repository. After that, an
+   assistant can explain the product, answer customers and draft marketing
+   without seeing any code.
+2. **The current state: where the work stands.** What each agent is doing,
+   where each one stopped (handoffs), decisions to respect, and blockers.
+3. **The change history: what changed.** Short, plain-English updates written
+   for you ("Login is now faster"), not developer jargon.
+
+```
+ Claude Code ─┐                          ┌─ you, in a browser (dashboard)
+ Codex ───────┼── MCP over HTTPS ──▶ OpenBrain ◀── HTTPS ─┘
+ OpenCode ────┤    (one token each)     one binary + one SQLite file
+ Hermes ──────┘
+```
+
+| | What it holds |
+|---|---|
+| **Profile** | What the product **is**: overview, audience, positioning, limitations, FAQ, … |
+| **Features** | What it **can do**, from the user's point of view, with a status (planned … removed) |
+| **Updates** | What **changed**, in plain English, for the project owner |
+| **Handoffs** | Where an agent **left off**: what it did, next steps, branch, commit |
+| **Notes** | Durable freeform context |
+| **Decisions** | Choices every agent should respect |
+| **Blockers** | Things preventing progress |
+| **Activity** | Raw history of every change, written automatically |
+
+Unknown facts are marked `unknown` instead of guessed, and every entry shows
+who wrote it and when. OpenBrain never stores source code, private reasoning
+or chat transcripts. It contains no AI model of its own; your agents do the
+thinking and OpenBrain remembers.
+
+| Profile | Updates |
+|---------|---------|
+| ![A project's profile: coverage checklist, knowledge sections and features](docs/images/profile.png) | ![A project's Updates page, grouped by day like patch notes](docs/images/updates.png) |
+
+## Installation
+
+Seven steps. Steps 1 and 2 happen once on the server; steps 3 to 5 once per
+agent; step 6 once per project.
+
+1. [Install the server](#1-install-the-server)
+2. [Create your administrator account](#2-create-your-administrator-account)
+3. [Give each agent its own token](#3-give-each-agent-its-own-token)
+4. [Connect your agents](#4-connect-your-agents)
+5. [Teach your agents the workflow](#5-teach-your-agents-the-workflow)
+6. [Add your first project](#6-add-your-first-project)
+7. [Check that everything works](#7-check-that-everything-works)
+
+> **Just want to try it?** On any machine with Go 1.25+:
+> `go build -o openbrain ./cmd/openbrain && ./openbrain serve`, then open
+> <http://127.0.0.1:8080/> and continue at step 2. Agents on the same machine
+> connect to `http://127.0.0.1:8080/mcp`.
+
+### 1. Install the server
+
+**You need:** a Linux server with systemd (Debian or Ubuntu work well), root
+access, and either a domain name pointing at it or its public IP address. Go
+1.25 or newer builds OpenBrain; an older Go downloads the right version by
+itself.
+
+**a. Build.**
+
+```sh
+git clone https://github.com/Anasou7/openbrain.git
+cd openbrain
+go test ./...
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o openbrain ./cmd/openbrain
+```
+
+While the repository is private, the server needs GitHub access to clone it
+(for example `gh auth login` and `gh repo clone Anasou7/openbrain`), or build on
+your own computer and copy the `openbrain` binary and the `deploy/` folder over
+with `scp`.
+
+**b. Install it as a service.**
+
+```sh
+sudo install -m 0755 openbrain /usr/local/bin/openbrain
+sudo useradd --system --home-dir /var/lib/openbrain --no-create-home \
+  --shell /usr/sbin/nologin openbrain
+
+sudo install -d -m 0750 -o root -g openbrain /etc/openbrain
+sudo install -m 0640 -o root -g openbrain deploy/openbrain.env.example /etc/openbrain/env
+
+sudo install -m 0644 deploy/openbrain.service deploy/openbrain-backup.service \
+  deploy/openbrain-backup.timer /etc/systemd/system/
+```
+
+**c. Choose the address.** OpenBrain can have a host to itself or live under
+a path next to other sites. Set `OPENBRAIN_BASE_PATH` in `/etc/openbrain/env`
+(`sudoedit /etc/openbrain/env`) to match:
+
+| Your URL will be | `OPENBRAIN_BASE_PATH` |
+|------------------|-----------------------|
+| `https://brain.example.com/` | `/` (the default) |
+| `https://example.com/openbrain/` | `/openbrain` |
+
+Then start it:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now openbrain.service openbrain-backup.timer
+curl -s http://127.0.0.1:8080/ready     # with /openbrain: .../openbrain/ready; expect {"status":"ready"}
+```
+
+**d. Add HTTPS.** OpenBrain listens only on `127.0.0.1:8080`, so a reverse
+proxy gives it a public HTTPS address. With [Caddy](https://caddyserver.com),
+which gets and renews certificates by itself, `/etc/caddy/Caddyfile` is:
+
+```caddy
+brain.example.com {
+	reverse_proxy 127.0.0.1:8080
+}
+```
+
+Run `sudo systemctl reload caddy`.
+[deploy/Caddyfile.example](deploy/Caddyfile.example) also shows the shared-host
+`/openbrain` layout, and a server with **no domain**, which uses a trusted
+certificate for its IP address. nginx works too
+([deploy/nginx.conf.example](deploy/nginx.conf.example)). On a private network,
+Tailscale or an SSH tunnel can replace the proxy
+([docs/MCP.md](docs/MCP.md#reaching-the-server)).
+
+**e. Close everything else.** Allow only SSH, HTTP and HTTPS:
+
+```sh
+sudo ufw default deny incoming
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+Never expose port 8080. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) has the
+details: nginx, nftables, trusted proxies, upgrades and restores.
+
+### 2. Create your administrator account
+
+Open your URL (for example `https://brain.example.com/`) straight away. A new
+install sends you to **setup**: choose a username, a display name and a
+password (8+ characters). That first account is the administrator, and you're
+signed in immediately. Until you do this, whoever opens the page first gets
+the account.
+
+Other people can get their own accounts later, from the **System** page.
+
+### 3. Give each agent its own token
+
+Every agent gets its own identity (an *actor*) and a token, so the dashboard
+can show who did what. On the dashboard's **Agents** page:
+
+1. **Add an actor**: slug `claude`, display name `Claude`, kind `agent`.
+2. **Create a token**: pick the actor and a label for the machine, such as
+   `laptop`. The token (`obt_…`) is **shown once**, so copy it now.
+3. Repeat for each agent, for example `codex`, `opencode` and `hermes`. Give
+   each machine its own token, so you can revoke one without touching the
+   others.
+
+The **MCP endpoint** shown at the top of the Agents page is the URL your
+agents connect to, for example `https://brain.example.com/mcp`.
+
+<details>
+<summary>The same from the server's shell</summary>
+
+```sh
+DB=/var/lib/openbrain/openbrain.db
+sudo -u openbrain env OPENBRAIN_DB=$DB openbrain actor create claude --name "Claude"
+sudo -u openbrain env OPENBRAIN_DB=$DB openbrain token create --actor claude --label laptop
+```
+</details>
+
+On each computer where an agent runs, store its token in the environment
+variable `OPENBRAIN_MCP_TOKEN`. The configurations below read it from there,
+so the token never sits in a config file:
+
+```sh
+# macOS / Linux: add to ~/.profile or ~/.zshrc, then open a new terminal
+export OPENBRAIN_MCP_TOKEN='obt_…'
+```
+```powershell
+# Windows: then open a new terminal
+setx OPENBRAIN_MCP_TOKEN "obt_…"
+```
+
+If several agents run on the same computer, each still needs its own token.
+Use the per-client places shown in step 4 (Hermes' `.env` file, for example)
+or different variable names.
+
+### 4. Connect your agents
+
+In every example, replace `https://brain.example.com/mcp` with your MCP
+endpoint from step 3.
+
+**Claude Code**
+
+```sh
+claude mcp add-json --scope user openbrain \
+  '{"type":"http","url":"https://brain.example.com/mcp","headers":{"Authorization":"Bearer ${OPENBRAIN_MCP_TOKEN}"}}'
+claude mcp list        # expect: openbrain ... ✔ Connected
+```
+
+Keep the single quotes: Claude Code fills in `${OPENBRAIN_MCP_TOKEN}` itself
+when it connects.
+
+**Codex**: in `~/.codex/config.toml`
+
+```toml
+[mcp_servers.openbrain]
+url = "https://brain.example.com/mcp"
+bearer_token_env_var = "OPENBRAIN_MCP_TOKEN"
+```
+
+Check it with `codex mcp list`.
+
+**OpenCode**: in `~/.config/opencode/opencode.json`
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "openbrain": {
+      "type": "remote",
+      "url": "https://brain.example.com/mcp",
+      "oauth": false,
+      "headers": { "Authorization": "Bearer {env:OPENBRAIN_MCP_TOKEN}" }
+    }
+  }
+}
+```
+
+Check it with `opencode mcp list`.
+
+**Hermes**: in `config.yaml` in your Hermes home (`~/.hermes/`, or
+`%LOCALAPPDATA%\hermes\` on Windows)
+
+```yaml
+mcp_servers:
+  openbrain:
+    url: "https://brain.example.com/mcp"
+    headers:
+      Authorization: "Bearer ${OPENBRAIN_MCP_TOKEN}"
+```
+
+Put `OPENBRAIN_MCP_TOKEN=obt_…` in the `.env` file next to it. If you use
+Hermes profiles, each profile folder (`profiles/<name>/`) has its own
+`config.yaml` and `.env`, so repeat this for every profile that should see
+OpenBrain. Check it with `hermes mcp test openbrain`, which should report
+`Tools discovered: 19`.
+
+**Any other MCP client**: use Streamable HTTP, your MCP endpoint, and the
+header `Authorization: Bearer <token>`.
+
+Restart each agent after changing its configuration.
+[docs/MCP.md](docs/MCP.md#client-configuration) has project-level variants and
+troubleshooting.
+
+### 5. Teach your agents the workflow
+
+Connecting gives an agent the tools. A short instruction block tells it when
+to use them: read the project before working, leave a handoff when stopping,
+keep the profile true. Paste the block below the line in each file into the
+agent's standing instructions:
+
+| Agent | Paste this | Into |
+|-------|-----------|------|
+| Claude Code | [docs/clients/CLAUDE.md](docs/clients/CLAUDE.md) | `~/.claude/CLAUDE.md` (all projects) or a repository's `CLAUDE.md` |
+| Codex | [docs/clients/CODEX.md](docs/clients/CODEX.md) | `~/.codex/AGENTS.md` or a repository's `AGENTS.md` |
+| OpenCode | [docs/clients/OPENCODE.md](docs/clients/OPENCODE.md) | `~/.config/opencode/AGENTS.md` or a repository's `AGENTS.md` |
+| Hermes | [docs/clients/HERMES.md](docs/clients/HERMES.md) | `SOUL.md` in your Hermes home (and in each profile you use) |
+| Anything else | [docs/clients/GENERIC.md](docs/clients/GENERIC.md) | wherever it keeps standing instructions |
+
+The coding agents' block covers working on code. The Hermes block makes Hermes
+answer only from what OpenBrain contains, and ask you before it acts on a
+change, for example by drafting an announcement.
+
+### 6. Add your first project
+
+Open a terminal in the project's repository, start a coding agent (Claude
+Code, Codex or OpenCode) and ask:
+
+> Fully add this project to OpenBrain.
+
+The agent registers the repository, then reads the README, docs, app routes,
+CLI, API, configuration and deployment files. It writes the project's profile
+in one go: what the product is, who it's for, every user-facing feature, its
+integrations and limitations. Anything the repository doesn't show, such as
+pricing, is marked `unknown` rather than guessed. Open the project's
+**Profile** page on the dashboard to read what it wrote. You can edit or fill
+in any section yourself.
+
+You can also create a project by hand: **Projects → New project** on the
+dashboard, with its name and, ideally, its repository URL so agents recognise
+it. Then ask an agent to build the profile as above.
+
+Repeat this for each project. From then on, agents pick the project up by
+themselves whenever they work in that repository.
+
+### 7. Check that everything works
+
+- **Dashboard → Agents:** each token shows *last used* after its agent's
+  first call.
+- **Ask any agent:** "What projects are in OpenBrain?" It should list them,
+  using `list_projects` or `get_overview`.
+- **Ask Hermes:** "What is <project> and who is it for?", then "What changed
+  recently?" The answers should come from the profile and the updates.
+- **After a coding session:** the project page shows the agent's state, its
+  handoff, and an update if something meaningful changed.
+
+A token can be checked without any agent:
+
+```sh
+curl -s -H "Authorization: Bearer $OPENBRAIN_MCP_TOKEN" https://brain.example.com/api/whoami
+```
+
+A `401` means the token is wrong, revoked or not set in that terminal.
+
+## Everyday use
+
+With the instructions from step 5, agents follow this loop by themselves:
+
+```
+find_project → get_project_context → set_agent_state(working)
+  → work, recording decisions / blockers / notes that will matter later
+  → if a durable product fact changed: update_project_knowledge / upsert_project_feature
+  → record_handoff (summary, next steps, branch, commit)
+      + a plain-English update, only if something meaningful changed for you
+  → final state (finished, idle, blocked or waiting)
+```
+
+Your part is the dashboard:
+
+- **Overview:** every project against every person and agent, with each
+  one's latest meaningful work.
+- **Project page:** a product snapshot, the latest update, agent states,
+  handoffs, decisions, blockers and notes. You can add notes, decisions,
+  blockers, handoffs and updates yourself; they're attributed to you.
+- **Profile:** the full description of the product. Edit any section or
+  feature; fill in what agents marked `unknown`.
+- **Updates:** what changed, grouped by day like patch notes.
+
+[docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md) explains the workflow in
+full, including how agents keep the profile up to date and how Hermes answers
+questions about a project.
+
+## Reference
+
+### MCP tools
+
+| Tool | Purpose |
+|------|---------|
+| `find_project` | Identify the project from a git remote, ID or slug |
+| `get_project_profile` | What the project is and does: the whole profile, one section, or one feature |
+| `get_project_context` | The current state: everything needed to resume work |
+| `get_project_updates` | What changed, newest first, paged |
+| `get_project_history` | Older handoffs, decisions, notes or activity, paged |
+| `get_overview` | All projects, where each participant left them, and recent updates |
+| `list_projects`, `register_project`, `update_project` | Browse and manage projects |
+| `sync_project_profile` | Write a comprehensive profile in one call |
+| `update_project_knowledge`, `upsert_project_feature` | Keep one section or feature true when a durable fact changes |
+| `set_agent_state` | Your current state and task |
+| `record_handoff` | Where you left the project, optionally with a project update |
+| `publish_project_update` | Tell the project owner what meaningfully changed |
+| `record_decision`, `add_note` | Durable decisions and notes |
+| `raise_blocker`, `resolve_blocker` | Track blockers |
+
+Full descriptions and schemas: [docs/MCP.md](docs/MCP.md). Scripts can use the
+REST API instead: [docs/API.md](docs/API.md).
+
+### Configuration
+
+Set in `/etc/openbrain/env`, then `sudo systemctl restart openbrain`.
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `OPENBRAIN_DB` | `openbrain.db` | SQLite database file |
+| `OPENBRAIN_ADDR` | `127.0.0.1:8080` | Listen address; keep it private |
+| `OPENBRAIN_BASE_PATH` | `/` | URL prefix; must match the proxy |
+| `OPENBRAIN_TRUSTED_PROXIES` | `127.0.0.1,::1` | Proxies whose `X-Forwarded-*` headers are believed |
+| `OPENBRAIN_TOKEN` | *(unset)* | Optional admin API token for scripts; agents never need it |
+| `OPENBRAIN_STALE_AFTER` | `1h` | When a busy agent state counts as stale |
+| `OPENBRAIN_LOG_FORMAT`, `OPENBRAIN_LOG_LEVEL` | `text`, `info` | Logging |
+
+### Commands
+
+Run them as the service user, for example
+`sudo -u openbrain env OPENBRAIN_DB=/var/lib/openbrain/openbrain.db openbrain user list`.
+
+| Command | Does |
+|---------|------|
+| `openbrain serve` | Run the server (applies migrations first) |
+| `openbrain user create <name> [--admin]` | Create an account; prints a generated password once |
+| `openbrain user reset-password <name>` | Recover a lost password |
+| `openbrain actor create <slug>`, `openbrain token create --actor <slug>` | Register an agent and issue its token |
+| `openbrain token list`, `openbrain token revoke <id>` | Manage tokens |
+| `openbrain backup`, `openbrain restore <file>` | Consistent online backup, and restore |
+| `openbrain version` | Print the version |
+
+### Upgrading
+
+```sh
+cd openbrain && git pull
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o openbrain ./cmd/openbrain
+sudo systemctl start openbrain-backup.service          # back up first
+sudo cp -p /usr/local/bin/openbrain /usr/local/bin/openbrain.prev
+sudo install -m 0755 openbrain /usr/local/bin/openbrain
+sudo systemctl restart openbrain
+```
+
+Database changes apply automatically on start.
+
+### Security
+
+| Who | Credential | Reaches |
+|-----|------------|---------|
+| People | Username and password, then a browser session | The dashboard |
+| Agents | Their own actor token (`obt_…`) | MCP; every write is attributed to the agent |
+| Admin scripts | `OPENBRAIN_TOKEN` (optional, powerful) | The REST API |
+
+They don't substitute for each other: a browser session can't call the API or
+MCP, and `/mcp` refuses the admin token. Passwords are hashed with Argon2id;
+sessions and tokens are stored only as hashes; sign-in is rate limited. Use
+HTTPS or a private network, and never commit a token. To report a
+vulnerability, see [SECURITY.md](SECURITY.md).
+
+### Backups
+
+The bundled timer writes a verified snapshot every night to
+`/var/lib/openbrain/backups/` and keeps 14 days.
+`sudo systemctl start openbrain-backup.service` takes one now. Copy backups
+off the machine for anything important;
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#restore) shows how to restore.
+
+### Resource use
+
+About 20–30 MB of RAM and no background CPU. Typical requests take 3–5 ms on a
+2 vCPU VM. The systemd unit caps memory at 64 MB (soft) and 96 MB (hard).
+
+### Documentation
+
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): installation in depth, proxies,
+  firewall, accounts, backups, upgrades
+- [docs/MCP.md](docs/MCP.md): connecting agents, every tool, troubleshooting
+- [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md): how agents and assistants
+  should use OpenBrain
+- [docs/API.md](docs/API.md): the REST API
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): data model, authentication,
+  concurrency
+- [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md),
+  [SECURITY.md](SECURITY.md)
+
+## Design and credits
+
+The dashboard's visual language (monochrome, ruled, condensed type) follows
+[DESIGN.md](DESIGN.md), which was modelled on the public Nous Portal. OpenBrain
+is an independent project and is **not affiliated with Nous Research**. It
+ships its own artwork and none of the reference's proprietary fonts, images or
+code. Fonts are League Gothic and Geist Mono, both under the SIL Open Font
+License (see `internal/web/static/fonts/`).
+
+## License
+
+[MIT](LICENSE)

@@ -1,0 +1,7 @@
+{{define "title"}}{{.Code}}{{end}}
+
+{{define "content"}}{{$link := or .Link "/"}}
+<h1 class="divider"><span>{{if eq .Code 404}}Not found{{else if eq .Code 403}}Not allowed{{else}}Error{{end}}</span></h1>
+<p class="auth-lede">{{.Message}}</p>
+<a class="btn btn-outline btn-wide" href="{{u $link}}">{{if eq $link "/login"}}Sign in{{else}}Back to overview{{end}}</a>
+{{end}}

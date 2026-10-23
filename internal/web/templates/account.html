@@ -1,0 +1,43 @@
+{{define "title"}}Account{{end}}
+{{define "strip"}}Account{{end}}
+
+{{define "content"}}{{$u := .V.User}}
+<div class="section-head first"><h1 class="title">Account</h1></div>
+
+<dl class="facts">
+  <div><dt class="label">Display name</dt><dd>{{$u.Actor.DisplayName}}</dd></div>
+  <div><dt class="label">Username</dt><dd><code>{{$u.Username}}</code></dd></div>
+  <div><dt class="label">Role</dt><dd>{{$u.Role}}</dd></div>
+  <div><dt class="label">Writes appear as</dt><dd><code>{{$u.Actor.Slug}}</code></dd></div>
+</dl>
+
+<div class="grid2 forms-pair">
+  <section class="section" aria-labelledby="name-title">
+    <h2 class="section-title" id="name-title">Display name</h2>
+    <form method="post" action="{{u "/account/name"}}" class="form">
+      <label class="field"><span class="label">Display name</span><input class="input" name="display_name" value="{{$u.Actor.DisplayName}}" required maxlength="200"></label>
+      <div><button class="btn btn-primary btn-sm" type="submit">Save</button></div>
+    </form>
+  </section>
+
+  <section class="section" id="password" aria-labelledby="password-title">
+    <h2 class="section-title" id="password-title">Change password</h2>
+    <form method="post" action="{{u "/account/password"}}" class="form">
+      <input type="hidden" name="username" value="{{$u.Username}}" autocomplete="username">
+      <label class="field"><span class="label">Current password</span><input class="input" type="password" name="current" required autocomplete="current-password"></label>
+      <label class="field"><span class="label">New password</span><input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+      <label class="field"><span class="label">Confirm new password</span><input class="input" type="password" name="confirm" required autocomplete="new-password"></label>
+      <div><button class="btn btn-primary btn-sm" type="submit">Change password</button></div>
+    </form>
+    <p class="sub">Changing your password signs out your other sessions.</p>
+  </section>
+</div>
+
+<section class="section" aria-labelledby="sessions-title">
+  <h2 class="section-title" id="sessions-title">Sessions</h2>
+  <p class="lede">{{.Sessions}} active session{{if ne .Sessions 1}}s{{end}}, including this one.</p>
+  <form method="post" action="{{u "/account/sessions"}}" class="inline">
+    <button class="btn btn-outline btn-sm" type="submit"{{if le .Sessions 1}} disabled{{end}}>Sign out other sessions</button>
+  </form>
+</section>
+{{end}}

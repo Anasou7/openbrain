@@ -1,0 +1,112 @@
+{{define "title"}}Overview{{end}}
+{{define "strip"}}Overview{{end}}
+
+{{define "content"}}
+<header class="intro">
+  <h1 class="hero">OpenBrain</h1>
+  <p class="lede">Shared operational state across your projects and agents.</p>
+</header>
+
+<dl class="metrics">
+  {{range .Metrics}}<div class="metric"><dt class="label">{{.Label}}</dt><dd class="metric-value">{{.Value}}</dd><dd class="metric-note">{{.Note}}</dd></div>{{end}}
+</dl>
+
+<section aria-labelledby="matrix-title">
+  <div class="section-head">
+    <h2 class="title" id="matrix-title">Projects</h2>
+    <a class="btn btn-text" href="{{u "/projects"}}"><span>All projects</span>{{icon "arrow"}}</a>
+  </div>
+  {{if .O.Projects}}
+  <div class="table-wrap">
+    <table class="table matrix">
+      <thead>
+        <tr>
+          <th scope="col">Project</th>
+          <th scope="col">Status</th>
+          {{range .O.Actors}}<th scope="col">{{.DisplayName}}{{if eq .Slug $.V.User.Actor.Slug}} <span class="you">(you)</span>{{end}}</th>{{end}}
+          <th scope="col" class="num">Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+      {{range $row := .O.Projects}}{{$p := $row.Project}}
+        <tr>
+          <th scope="row">
+            <a class="row-link" href="{{u "/p/"}}{{$p.Slug}}">{{$p.Name}}</a>
+            {{with $p.CurrentFocus}}<div class="sub">{{excerpt . 64}}</div>{{end}}
+          </th>
+          <td>
+            {{template "status" $p.Status}}
+            {{with $p.OpenBlockers}}<div class="sub warn"><span aria-hidden="true">▲</span> {{.}} blocker{{if gt . 1}}s{{end}}</div>{{end}}
+          </td>
+          {{range $a := $.O.Actors}}
+          <td class="cell">
+            {{with index $row.Actors $a.Slug}}{{$v := cell .}}
+              {{with .State}}{{template "state" .}}{{end}}
+              {{with $v.Text}}<div class="cell-text">{{excerpt . 72}}</div>{{end}}
+              <div class="sub">{{ago $v.At}}</div>
+            {{else}}<span class="faint" aria-label="nothing yet">—</span>{{end}}
+          </td>
+          {{end}}
+          <td class="num sub">{{ago $p.LastActivityAt}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty">
+    <span class="empty-glyph" aria-hidden="true">○</span>
+    <h3 class="subtitle">No projects yet</h3>
+    <p>Create one here, or let an agent register the repository it works in through MCP.</p>
+    <a class="btn btn-primary" href="{{u "/projects?new"}}#new"><span>New project</span>{{icon "plus"}}</a>
+  </div>
+  {{end}}
+</section>
+
+<section aria-labelledby="work-title">
+  <div class="section-head">
+    <h2 class="title" id="work-title">Latest agent work</h2>
+  </div>
+  {{if .Work}}
+  <ol class="entries work">
+    {{range .Work}}
+    <li class="entry">
+      <div class="work-head">
+        <span>{{template "actor" .Actor}} <span class="faint-text" aria-hidden="true">·</span> <a class="row-link" href="{{u "/p/"}}{{.ProjectSlug}}/updates#update-{{.ID}}">{{.ProjectName}}</a></span>
+        <time class="sub" datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time>
+      </div>
+      <p class="work-title">{{.Title}}</p>
+      <p class="sub">{{excerpt .Summary 180}}</p>
+    </li>
+    {{end}}
+  </ol>
+  {{else}}
+  <p class="sub">When an agent finishes meaningful work, it publishes a short update saying what changed. The latest ones appear here.</p>
+  {{end}}
+</section>
+{{end}}
+
+{{define "context"}}
+<section class="ctx-section">
+  <h2 class="label">Signed in</h2>
+  <p class="ctx-name">{{.V.User.Actor.DisplayName}} <span class="tag tag-outline">{{.V.User.Role}}</span></p>
+</section>
+<section class="ctx-section">
+  <h2 class="label">Agents</h2>
+  {{range .Agents}}
+  <div class="agent-line">
+    <div class="agent-head">{{template "actor" .Actor}}{{if .State}}{{template "state" .}}{{end}}</div>
+    {{with .Text}}<div class="sub">{{excerpt . 70}}</div>{{end}}
+    <div class="sub faint-text">{{.Project}} · {{ago .At}}</div>
+  </div>
+  {{else}}
+  <p class="sub">No agent has reported yet.</p>
+  {{end}}
+</section>
+<section class="ctx-section">
+  <h2 class="label">Connect an agent</h2>
+  <p class="sub">Point any MCP client at this endpoint, with an actor token from the Agents page.</p>
+  <div class="copy-row"><code class="code">{{.MCPURL}}</code><button class="btn btn-outline btn-xs" type="button" data-copy="{{.MCPURL}}">Copy</button></div>
+  <a class="btn btn-text" href="{{u "/agents"}}"><span>Agents and tokens</span>{{icon "arrow"}}</a>
+</section>
+{{end}}

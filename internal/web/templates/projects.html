@@ -1,0 +1,57 @@
+{{define "title"}}Projects{{end}}
+{{define "strip"}}Projects{{with .Status}} <span class="crumb-sep" aria-hidden="true">›</span> {{.}}{{end}}{{end}}
+
+{{define "content"}}
+<div class="section-head first">
+  <h1 class="title">Projects</h1>
+  <a class="btn btn-primary btn-sm" href="{{u "/projects?new"}}#new"><span>New project</span>{{icon "plus"}}</a>
+</div>
+
+<div class="filters" role="group" aria-label="Filter by status">
+  <a class="chip{{if eq .Status ""}} on{{end}}" href="{{u "/projects"}}"{{if eq .Status ""}} aria-current="page"{{end}}>Current</a>
+  {{range .Statuses}}<a class="chip{{if eq $.Status .}} on{{end}}" href="{{u "/projects?status="}}{{.}}"{{if eq $.Status .}} aria-current="page"{{end}}>{{.}}</a>{{end}}
+  <a class="chip{{if eq .Status "all"}} on{{end}}" href="{{u "/projects?status=all"}}"{{if eq .Status "all"}} aria-current="page"{{end}}>All</a>
+  <span class="count">Showing {{len .Projects}} of {{.Total}}</span>
+</div>
+
+{{if .Projects}}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">Project</th><th scope="col">Status</th><th scope="col">Current focus</th><th scope="col">Repository</th><th scope="col" class="num">Blockers</th><th scope="col" class="num">Updated</th></tr></thead>
+    <tbody>
+    {{range .Projects}}
+      <tr>
+        <th scope="row"><a class="row-link" href="{{u "/p/"}}{{.Slug}}">{{.Name}}</a><div class="sub mono-faint">{{.Slug}}</div></th>
+        <td>{{template "status" .Status}}</td>
+        <td class="wrap">{{with .CurrentFocus}}{{excerpt . 90}}{{else}}<span class="faint">—</span>{{end}}</td>
+        <td class="wrap sub">{{with .RepoURL}}<code>{{.}}</code>{{else}}<span class="faint">—</span>{{end}}</td>
+        <td class="num">{{if .OpenBlockers}}<span class="warn"><span aria-hidden="true">▲</span> {{.OpenBlockers}}</span>{{else}}<span class="faint">0</span>{{end}}</td>
+        <td class="num sub">{{ago .LastActivityAt}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="empty">
+  <span class="empty-glyph" aria-hidden="true">○</span>
+  <h2 class="subtitle">Nothing here</h2>
+  <p>No projects match this filter.</p>
+</div>
+{{end}}
+
+<section class="section" id="new" aria-labelledby="new-title">
+  <details class="disclosure"{{if .New}} open{{end}}>
+    <summary><h2 class="subtitle" id="new-title">New project</h2></summary>
+    <form method="post" action="{{u "/projects"}}" class="form grid2">
+      <label class="field"><span class="label">Name</span><input class="input" name="name" required maxlength="1000" autocomplete="off"></label>
+      <label class="field"><span class="label">Slug</span><input class="input" name="slug" placeholder="derived from the name" autocomplete="off"></label>
+      <label class="field"><span class="label">Repository URL</span><input class="input" name="repo_url" placeholder="git@github.com:org/repo.git" autocomplete="off"></label>
+      <label class="field"><span class="label">Default branch</span><input class="input" name="default_branch" placeholder="main" autocomplete="off"></label>
+      <label class="field wide"><span class="label">Current focus</span><input class="input" name="current_focus" autocomplete="off"></label>
+      <label class="field wide"><span class="label">Description</span><textarea class="input" name="description" rows="3"></textarea></label>
+      <div class="wide"><button class="btn btn-primary" type="submit">Create project</button></div>
+    </form>
+  </details>
+</section>
+{{end}}

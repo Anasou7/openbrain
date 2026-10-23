@@ -1,0 +1,13 @@
+{{define "title"}}Sign in{{end}}
+
+{{define "content"}}
+<h1 class="divider"><span>Sign in</span></h1>
+{{template "notices" .}}
+<form method="post" action="{{u "/login"}}" class="form">
+  <label class="field"><span class="label">Username</span>
+    <input class="input" name="username" value="{{.Username}}" required autocomplete="username" autocapitalize="none" spellcheck="false" autofocus></label>
+  <label class="field"><span class="label">Password</span>
+    <input class="input" type="password" name="password" required autocomplete="current-password"></label>
+  <button class="btn btn-primary btn-wide" type="submit">Sign in</button>
+</form>
+{{end}}

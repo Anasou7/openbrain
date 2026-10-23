@@ -1,0 +1,68 @@
+{{define "title"}}System{{end}}
+{{define "strip"}}System <span class="crumb-sep" aria-hidden="true">›</span> Users{{end}}
+
+{{define "content"}}
+<div class="section-head first">
+  <h1 class="title">Users</h1>
+  <a class="btn btn-primary btn-sm" href="#new-user"><span>New user</span>{{icon "plus"}}</a>
+</div>
+<p class="lede">People who can sign in. Each account writes as its own human actor.</p>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">Username</th><th scope="col">Display name</th><th scope="col">Role</th><th scope="col">Last sign-in</th><th scope="col">Status</th><th scope="col"><span class="sr">Actions</span></th></tr></thead>
+    <tbody>
+    {{range .Users}}
+      <tr>
+        <th scope="row"><code>{{.Username}}</code>{{if eq .ID $.V.User.ID}} <span class="you">(you)</span>{{end}}</th>
+        <td>{{.Actor.DisplayName}}</td>
+        <td>{{.Role}}</td>
+        <td class="sub">{{with ago .LastLoginAt}}{{.}}{{else}}never{{end}}</td>
+        <td>{{if .DisabledAt.IsZero}}<span class="st"><span class="g" aria-hidden="true">●</span>active</span>{{else}}<span class="st st-off"><span class="g" aria-hidden="true">✕</span>disabled</span>{{end}}</td>
+        <td class="actions">
+          {{if ne .ID $.V.User.ID}}
+            {{if .DisabledAt.IsZero}}
+            <form method="post" action="{{u "/system/users/"}}{{.ID}}/disable" class="inline"><button class="btn btn-text btn-tiny" type="submit">Disable</button></form>
+            {{else}}
+            <form method="post" action="{{u "/system/users/"}}{{.ID}}/enable" class="inline"><button class="btn btn-text btn-tiny" type="submit">Enable</button></form>
+            {{end}}
+          {{end}}
+          <details class="inline-disclosure">
+            <summary class="btn btn-text btn-tiny">Reset password</summary>
+            <form method="post" action="{{u "/system/users/"}}{{.ID}}/password" class="form compact">
+              <input class="input input-sm" type="password" name="password" required minlength="8" autocomplete="new-password" placeholder="New password" aria-label="New password for {{.Username}}">
+              <input class="input input-sm" type="password" name="confirm" required autocomplete="new-password" placeholder="Confirm" aria-label="Confirm new password">
+              <button class="btn btn-outline btn-xs" type="submit">Set password</button>
+            </form>
+          </details>
+        </td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+
+<section class="section" id="new-user" aria-labelledby="new-user-title">
+  <h2 class="section-title" id="new-user-title">New user</h2>
+  <form method="post" action="{{u "/system/users"}}" class="form grid2">
+    <label class="field"><span class="label">Username</span><input class="input" name="username" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="lowercase, e.g. alice"></label>
+    <label class="field"><span class="label">Display name</span><input class="input" name="display_name" autocomplete="off" placeholder="e.g. Alice"></label>
+    <label class="field"><span class="label">Password</span><input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <label class="field"><span class="label">Confirm password</span><input class="input" type="password" name="confirm" required autocomplete="new-password"></label>
+    <label class="field"><span class="label">Role</span><select class="input" name="role">{{range .Roles}}<option{{if eq . "user"}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+    <div class="wide"><button class="btn btn-primary" type="submit">Create user</button></div>
+  </form>
+  <p class="sub">Share the initial password privately; they can change it under Account.</p>
+</section>
+
+<section class="section" aria-labelledby="instance-title">
+  <h2 class="section-title" id="instance-title">Instance</h2>
+  <dl class="facts">
+    <div><dt class="label">Version</dt><dd><code>{{.Version}}</code></dd></div>
+    <div><dt class="label">Schema</dt><dd><code>v{{.Schema}}</code></dd></div>
+    <div><dt class="label">Base path</dt><dd><code>{{.BasePath}}</code></dd></div>
+    <div><dt class="label">Admin API token</dt><dd>{{if .AdminToken}}configured{{else}}not configured{{end}}</dd></div>
+    <div class="wide"><dt class="label">MCP endpoint</dt><dd><code>{{.MCPURL}}</code></dd></div>
+  </dl>
+</section>
+{{end}}

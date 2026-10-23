@@ -1,0 +1,127 @@
+{{define "title"}}Profile · {{.P.Name}}{{end}}
+{{define "strip"}}<a href="{{u "/projects"}}">Projects</a> <span class="crumb-sep" aria-hidden="true">›</span> <a href="{{u "/p/"}}{{.P.Slug}}">{{.P.Slug}}</a> <span class="crumb-sep" aria-hidden="true">›</span> Profile{{end}}
+
+{{define "provenance"}}<div class="meta provenance">Updated by {{template "actor" .UpdatedBy}} <time datetime="{{.UpdatedAt}}" title="{{.UpdatedAt}}">{{ago .UpdatedAt}}</time>{{if or .SourceBranch .SourceCommit}} <span class="facts-inline" title="the repository state it was derived from">{{with .SourceBranch}}<code>{{.}}</code>{{end}}{{with .SourceCommit}} @ <code>{{shortSHA .}}</code>{{end}}</span>{{end}}{{if ne .CreatedBy.Slug .UpdatedBy.Slug}} <span class="faint-text">· first written by {{.CreatedBy.DisplayName}}</span>{{end}}</div>{{end}}
+
+{{define "content"}}{{$p := .P}}
+<header class="page-head">
+  <h1 class="title">{{$p.Name}}</h1>
+  {{template "status" $p.Status}}
+</header>
+<p class="lede">What this project is and does, written for people and assistants who never read the code. The agents that work on it keep it current, and you can edit any part.</p>
+{{template "subnav" (subnav $p.Slug "profile")}}
+
+<section class="checklist" aria-labelledby="coverage-title">
+  <h2 class="label" id="coverage-title">Coverage <span class="faint-text">{{len .Prof.Completeness.Known}} of {{len .Checklist}} sections known · {{.Prof.Completeness.Features}} features{{if not .Prof.UpdatedAt.IsZero}} · updated {{ago .Prof.UpdatedAt}}{{end}}</span></h2>
+  <ul class="check-grid">
+  {{range .Checklist}}
+    <li class="check check-{{.State}}">{{if eq .State "missing"}}<span class="g" aria-hidden="true">·</span> {{.Title}} <span class="sr">(missing)</span>{{else}}<a href="#s-{{.Key}}"><span class="g" aria-hidden="true">{{if eq .State "known"}}✓{{else if eq .State "unknown"}}?{{else}}–{{end}}</span> {{.Title}}</a>{{if ne .State "known"}} <span class="faint-text">{{humanize .State}}</span>{{end}}{{end}}</li>
+  {{end}}
+  </ul>
+</section>
+
+<div class="dossier">
+{{range .Blocks}}
+  {{if .Features}}
+  <section class="dossier-section" id="features" aria-labelledby="features-title">
+    <h2 class="section-title" id="features-title">Features</h2>
+    {{range $.Features}}
+    <article class="feature" id="f-{{.Slug}}">
+      <div class="feature-head"><h3 class="feature-name">{{.Name}}</h3><span class="tag tag-outline">{{.Status}}</span></div>
+      <p class="feature-summary">{{.Summary}}</p>
+      {{with .Description}}{{template "update-body" .}}{{end}}
+      {{if or .TargetUsers .UseCases .Limitations}}
+      <dl class="kv feature-facts">
+        {{with .TargetUsers}}<dt class="label">Best for</dt><dd class="prose">{{.}}</dd>{{end}}
+        {{with .UseCases}}<dt class="label">Useful for</dt><dd><ul class="bullets">{{range .}}<li>{{.}}</li>{{end}}</ul></dd>{{end}}
+        {{with .Limitations}}<dt class="label">Limitations</dt><dd class="prose">{{.}}</dd>{{end}}
+      </dl>
+      {{end}}
+      {{template "provenance" .}}
+      <details class="disclosure">
+        <summary><span class="label">Edit feature</span></summary>
+        <form method="post" action="{{u "/p/"}}{{$p.Slug}}/features/{{.Slug}}" class="form">
+          <div class="grid2">
+            <label class="field"><span class="label">Name</span><input class="input" name="name" value="{{.Name}}" required maxlength="200"></label>
+            <label class="field"><span class="label">Status</span>
+              <select class="input" name="status">{{$st := .Status}}{{range $.FeatureStatuses}}<option{{if eq . $st}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+          </div>
+          <label class="field"><span class="label">Summary</span><input class="input" name="summary" value="{{.Summary}}" required maxlength="1000"></label>
+          <label class="field"><span class="label">Description</span><textarea class="input" name="description" rows="4">{{.Description}}</textarea></label>
+          <label class="field"><span class="label">Best for</span><input class="input" name="target_users" value="{{.TargetUsers}}" maxlength="2000"></label>
+          <label class="field"><span class="label">Use cases (one per line)</span><textarea class="input" name="use_cases" rows="3">{{join .UseCases "\n"}}</textarea></label>
+          <label class="field"><span class="label">Limitations</span><textarea class="input" name="limitations" rows="2">{{.Limitations}}</textarea></label>
+          <div><button class="btn btn-primary btn-sm" type="submit">Save feature</button></div>
+        </form>
+      </details>
+    </article>
+    {{else}}<p class="sub">No features recorded yet.</p>{{end}}
+    {{with $.Removed}}
+    <details class="disclosure">
+      <summary><span class="label">Removed features ({{len .}})</span></summary>
+      <ul class="entries">{{range .}}<li class="entry" id="f-{{.Slug}}"><p class="prose strong">{{.Name}}</p><p class="prose sub">{{.Summary}}</p>{{template "provenance" .}}</li>{{end}}</ul>
+    </details>
+    {{end}}
+    <details class="disclosure" id="add-feature">
+      <summary><span class="label">Add a feature</span></summary>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/features" class="form">
+        <div class="grid2">
+          <label class="field"><span class="label">Name</span><input class="input" name="name" required maxlength="200" placeholder="Team workspaces"></label>
+          <label class="field"><span class="label">Status</span>
+            <select class="input" name="status">{{range $.FeatureStatuses}}<option{{if eq . "available"}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+        </div>
+        <label class="field"><span class="label">Summary</span><input class="input" name="summary" required maxlength="1000" placeholder="What it lets people do, in one sentence"></label>
+        <label class="field"><span class="label">Description</span><textarea class="input" name="description" rows="3"></textarea></label>
+        <label class="field"><span class="label">Best for</span><input class="input" name="target_users" maxlength="2000"></label>
+        <label class="field"><span class="label">Use cases (one per line)</span><textarea class="input" name="use_cases" rows="3"></textarea></label>
+        <label class="field"><span class="label">Limitations</span><textarea class="input" name="limitations" rows="2"></textarea></label>
+        <div><button class="btn btn-primary btn-sm" type="submit">Add feature</button></div>
+      </form>
+    </details>
+  </section>
+  {{else}}{{with .Section}}
+  <section class="dossier-section" id="s-{{.Key}}" aria-labelledby="t-{{.Key}}">
+    <h2 class="section-title" id="t-{{.Key}}">{{.Title}}</h2>
+    {{if eq .Status "known"}}{{template "update-body" .Content}}{{else}}
+    <p class="gap"><span class="tag tag-outline">{{humanize .Status}}</span> {{if eq .Status "unknown"}}Not established yet; nothing here should be treated as fact.{{else}}Does not apply to this project.{{end}}</p>
+    {{with .Content}}{{template "update-body" .}}{{end}}{{end}}
+    {{template "provenance" .}}
+    <details class="disclosure">
+      <summary><span class="label">Edit</span></summary>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/profile/{{.Key}}" class="form">
+        <div class="grid2">
+          <label class="field"><span class="label">Title</span><input class="input" name="title" value="{{.Title}}" maxlength="200"></label>
+          <label class="field"><span class="label">Status</span>
+            <select class="input" name="status">{{$st := .Status}}{{range $.SectionStatuses}}<option value="{{.}}"{{if eq . $st}} selected{{end}}>{{humanize .}}</option>{{end}}</select></label>
+        </div>
+        <label class="field"><span class="label">Content</span><textarea class="input" name="content" rows="8">{{.Content}}</textarea></label>
+        <div><button class="btn btn-primary btn-sm" type="submit">Save</button></div>
+      </form>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/profile/{{.Key}}/remove" class="row remove-row">
+        <label class="check"><input type="checkbox" name="confirm" value="yes" required> Remove this section</label>
+        <button class="btn btn-outline btn-xs" type="submit">Remove</button>
+      </form>
+    </details>
+  </section>
+  {{end}}{{end}}
+{{end}}
+</div>
+
+<section class="section" id="add-section">
+  <details class="disclosure"{{if .Err}} open{{end}}>
+    <summary><span class="label">Add a section</span></summary>
+    <form method="post" action="{{u "/p/"}}{{$p.Slug}}/profile" class="form">
+      <p class="sub">Use a suggested key or your own. Write what is true and established; if a fact is not known, add the section with the status unknown instead of guessing.</p>
+      <div class="grid2">
+        <label class="field"><span class="label">Key</span><input class="input" name="key" list="canonical-keys" required maxlength="64" placeholder="faq, pricing, or e.g. release_process"></label>
+        <label class="field"><span class="label">Title (optional)</span><input class="input" name="title" maxlength="200"></label>
+      </div>
+      <datalist id="canonical-keys">{{range .Missing}}<option value="{{.Key}}">{{.Title}}</option>{{end}}</datalist>
+      <label class="field"><span class="label">Status</span>
+        <select class="input" name="status">{{range .SectionStatuses}}<option value="{{.}}">{{humanize .}}</option>{{end}}</select></label>
+      <label class="field"><span class="label">Content</span><textarea class="input" name="content" rows="6"></textarea></label>
+      <div><button class="btn btn-primary btn-sm" type="submit">Add section</button></div>
+    </form>
+  </details>
+</section>
+{{end}}

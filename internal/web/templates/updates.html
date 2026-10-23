@@ -1,0 +1,66 @@
+{{define "title"}}Updates · {{.P.Name}}{{end}}
+{{define "strip"}}<a href="{{u "/projects"}}">Projects</a> <span class="crumb-sep" aria-hidden="true">›</span> <a href="{{u "/p/"}}{{.P.Slug}}">{{.P.Slug}}</a> <span class="crumb-sep" aria-hidden="true">›</span> Updates{{end}}
+
+{{define "content"}}{{$p := .P}}
+<header class="page-head">
+  <h1 class="title">{{$p.Name}}</h1>
+  {{template "status" $p.Status}}
+</header>
+<p class="lede">What meaningfully changed in this project, written for people. Agents publish updates when they finish meaningful work, and you can publish your own.</p>
+{{template "subnav" (subnav $p.Slug "updates")}}
+
+<details class="disclosure publish" id="publish"{{if .Err}} open{{end}}>
+  <summary><span class="label">Publish update</span></summary>
+  <form method="post" action="{{u "/p/"}}{{$p.Slug}}/updates" class="form">
+    <p class="sub">Say what changed and why it matters, in plain English, for whoever follows this project. Describe the outcome, not the task status. Updates are kept as written; to correct one, publish a newer update.</p>
+    <label class="field"><span class="label">Title</span><input class="input" name="title" required maxlength="200" placeholder="Login is now faster"></label>
+    <label class="field"><span class="label">Summary</span><textarea class="input" name="summary" rows="4" required maxlength="4000" placeholder="The delay noticed during task 3 is fixed, so signing in should feel immediate."></textarea></label>
+    <label class="field"><span class="label">Details (optional)</span><textarea class="input" name="details" rows="2" maxlength="8000"></textarea></label>
+    <div class="grid2">
+      <label class="field"><span class="label">Category</span>
+        <select class="input" name="category">{{range .Categories}}<option{{if eq . "improved"}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+      <label class="field"><span class="label">Task or reference (optional)</span><input class="input" name="task_reference" maxlength="200" placeholder="Task 3"></label>
+    </div>
+    <div><button class="btn btn-primary" type="submit">Publish update</button></div>
+  </form>
+</details>
+
+<div class="journal">
+{{range .Days}}
+  <section class="day" aria-labelledby="day-{{.Date}}">
+    <h2 class="day-head" id="day-{{.Date}}"><time datetime="{{.Date}}">{{.Label}}</time></h2>
+    {{range .Updates}}
+    <article class="update" id="update-{{.ID}}">
+      <h3 class="update-title">{{.Title}}</h3>
+      <div class="meta">{{template "actor" .Actor}} {{template "category" .Category}} <time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{clock .CreatedAt}}</time></div>
+      {{template "update-body" .Summary}}
+      {{with .Details}}<div class="update-details">{{range paras .}}<p>{{.}}</p>{{end}}</div>{{end}}
+      {{if or .TaskReference .Branch .CommitSHA}}
+      <div class="tech">
+        <span class="label">Technical details</span>
+        <dl class="kv">
+          {{with .TaskReference}}<dt>Task</dt><dd>{{.}}</dd>{{end}}
+          {{with .Branch}}<dt>Branch</dt><dd><code>{{.}}</code></dd>{{end}}
+          {{with .CommitSHA}}<dt>Commit</dt><dd><code>{{shortSHA .}}</code></dd>{{end}}
+        </dl>
+      </div>
+      {{end}}
+    </article>
+    {{end}}
+  </section>
+{{else}}
+  <div class="empty">
+    <span class="empty-glyph" aria-hidden="true">○</span>
+    <h2 class="subtitle">No updates yet</h2>
+    <p>Updates appear here when an agent finishes meaningful work and says what changed, or when someone publishes one above.</p>
+  </div>
+{{end}}
+</div>
+
+{{if or .Older .Paged}}
+<div class="pager">
+  {{if .Paged}}<a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/updates"><span>Newest</span></a>{{end}}
+  {{with .Older}}<a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/updates?before={{.}}"><span>Older updates</span>{{icon "arrow"}}</a>{{end}}
+</div>
+{{end}}
+{{end}}

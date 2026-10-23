@@ -1,0 +1,97 @@
+{{define "title"}}Agents{{end}}
+{{define "strip"}}Agents{{end}}
+
+{{define "content"}}
+<div class="section-head first"><h1 class="title">Agents</h1></div>
+<p class="lede">Each agent connects with its own token, and the token decides whom its writes are attributed to. One MCP endpoint serves every agent.</p>
+<div class="copy-row wide-copy"><span class="label">MCP endpoint</span><code class="code">{{.MCPURL}}</code><button class="btn btn-outline btn-xs" type="button" data-copy="{{.MCPURL}}">Copy</button></div>
+
+{{with .New}}
+<div class="panel secret" role="status">
+  <p class="label">New token for {{.Token.Actor.DisplayName}}{{with .Token.Label}} · {{.}}{{end}}</p>
+  <div class="copy-row"><code class="code code-secret">{{.Secret}}</code><button class="btn btn-primary btn-xs" type="button" data-copy="{{.Secret}}">Copy</button></div>
+  <p class="sub">Copy it now: it is not stored and will not be shown again. Give it to the agent through an environment variable, never a committed file.</p>
+</div>
+{{end}}
+
+<section class="section" aria-labelledby="agents-title">
+  <h2 class="section-title" id="agents-title">Agents and automations</h2>
+  {{if .Agents}}
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Actor</th><th scope="col">Kind</th>{{if .V.User.IsAdmin}}<th scope="col">Tokens</th>{{end}}<th scope="col" class="num">Since</th></tr></thead>
+      <tbody>
+      {{range $a := .Agents}}
+        <tr>
+          <th scope="row"><span class="who">{{$a.DisplayName}}</span><div class="sub mono-faint">{{$a.Slug}}</div></th>
+          <td>{{$a.Kind}}</td>
+          {{if $.V.User.IsAdmin}}
+          <td class="wrap">
+            {{range index $.Tokens $a.Slug}}
+            <div class="token-row{{if not .RevokedAt.IsZero}} revoked{{end}}">
+              <code>{{.Prefix}}…</code> <span class="sub">#{{.ID}}{{with .Label}} · {{.}}{{end}} · {{if .LastUsedAt.IsZero}}never used{{else}}used {{ago .LastUsedAt}}{{end}}</span>
+              {{if .RevokedAt.IsZero}}
+              <form method="post" action="{{u "/agents/tokens/"}}{{.ID}}/revoke" class="inline"><button class="btn btn-text btn-tiny" type="submit">Revoke</button></form>
+              {{else}}<span class="sub">· revoked {{ago .RevokedAt}}</span>{{end}}
+            </div>
+            {{else}}<span class="faint">No tokens</span>{{end}}
+          </td>
+          {{end}}
+          <td class="num sub">{{ago $a.CreatedAt}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="empty">
+    <span class="empty-glyph" aria-hidden="true">○</span>
+    <h3 class="subtitle">No agents yet</h3>
+    <p>{{if .V.User.IsAdmin}}Add an actor below, then create a token for it.{{else}}An administrator can add agents and issue their tokens.{{end}}</p>
+  </div>
+  {{end}}
+</section>
+
+<section class="section" aria-labelledby="people-title">
+  <h2 class="section-title" id="people-title">People</h2>
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th scope="col">Actor</th><th scope="col">Kind</th>{{if .V.User.IsAdmin}}<th scope="col">Tokens</th>{{end}}<th scope="col" class="num">Since</th></tr></thead>
+      <tbody>
+      {{range $a := .People}}
+        <tr>
+          <th scope="row"><span class="who">{{$a.DisplayName}}</span>{{if eq $a.Slug $.V.User.Actor.Slug}} <span class="you">(you)</span>{{end}}<div class="sub mono-faint">{{$a.Slug}}</div></th>
+          <td>{{$a.Kind}}</td>
+          {{if $.V.User.IsAdmin}}<td class="wrap">{{range index $.Tokens $a.Slug}}<div class="token-row{{if not .RevokedAt.IsZero}} revoked{{end}}"><code>{{.Prefix}}…</code> <span class="sub">#{{.ID}}{{with .Label}} · {{.}}{{end}}</span>{{if .RevokedAt.IsZero}} <form method="post" action="{{u "/agents/tokens/"}}{{.ID}}/revoke" class="inline"><button class="btn btn-text btn-tiny" type="submit">Revoke</button></form>{{end}}</div>{{else}}<span class="faint">—</span>{{end}}</td>{{end}}
+          <td class="num sub">{{ago $a.CreatedAt}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+  <p class="sub">People sign in with accounts{{if .V.User.IsAdmin}}, managed under <a href="{{u "/system"}}">System</a>{{end}}. A person who uses MCP from their own tools can also have a token.</p>
+</section>
+
+{{if .V.User.IsAdmin}}
+<section class="section grid2 forms-pair">
+  <details class="disclosure">
+    <summary><h2 class="subtitle">Create a token</h2></summary>
+    <form method="post" action="{{u "/agents/tokens"}}" class="form">
+      <label class="field"><span class="label">Actor</span>
+        <select class="input" name="actor">{{range .All}}<option value="{{.Slug}}">{{.DisplayName}} ({{.Slug}})</option>{{end}}</select></label>
+      <label class="field"><span class="label">Label</span><input class="input" name="label" placeholder="e.g. laptop" autocomplete="off"></label>
+      <div><button class="btn btn-primary" type="submit">{{icon "key"}}<span>Create token</span></button></div>
+    </form>
+  </details>
+  <details class="disclosure">
+    <summary><h2 class="subtitle">Add an actor</h2></summary>
+    <form method="post" action="{{u "/agents"}}" class="form">
+      <label class="field"><span class="label">Slug</span><input class="input" name="slug" required placeholder="e.g. claude" autocomplete="off"></label>
+      <label class="field"><span class="label">Display name</span><input class="input" name="display_name" placeholder="e.g. Claude" autocomplete="off"></label>
+      <label class="field"><span class="label">Kind</span><select class="input" name="kind">{{range .Kinds}}<option{{if eq . "agent"}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+      <div><button class="btn btn-primary" type="submit">Add actor</button></div>
+    </form>
+  </details>
+</section>
+{{end}}
+{{end}}

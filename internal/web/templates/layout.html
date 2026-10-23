@@ -1,0 +1,106 @@
+{{define "page"}}<!doctype html>
+<html lang="en" data-base="{{u ""}}"{{with .Rail}} data-rail="{{.}}"{{end}}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{template "title" .}} · OpenBrain</title>
+<link rel="icon" href="{{asset "badge.svg"}}" type="image/svg+xml">
+<link rel="preload" href="{{u "/static/fonts/league-gothic.woff2"}}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{asset "style.css"}}">
+<script src="{{asset "app.js"}}" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell{{if .Context}} has-ctx{{end}}">
+  <nav class="rail" aria-label="Main navigation">
+    <div class="rail-inner">
+      <div class="rail-head">
+        <a class="brand" href="{{u "/"}}" aria-label="OpenBrain overview">
+          <img class="badge" src="{{asset "badge.svg"}}" alt="" width="44" height="63">
+          <span class="wordmark" aria-hidden="true">Open<br>Brain</span>
+        </a>
+        <button class="icon-btn rail-toggle" type="button" data-rail-toggle aria-label="Collapse navigation" title="Collapse navigation">{{icon "collapse"}}</button>
+      </div>
+      <a class="btn btn-primary btn-sm btn-block rail-cta" href="{{u "/projects?new"}}#new" title="New project"><span>New project</span>{{icon "plus"}}</a>
+      {{template "nav" .}}
+    </div>
+  </nav>
+
+  <main class="main" id="main">
+    <div class="strip"><span class="slashes" aria-hidden="true">//</span> {{template "strip" .}}</div>
+    <div class="band">
+      {{with .Err}}<p class="flash flash-err" role="alert">{{.}}</p>{{end}}
+      {{with .Msg}}<p class="flash flash-ok" role="status">{{.}}</p>{{end}}
+      {{template "content" .}}
+    </div>
+  </main>
+
+  {{if .Context}}
+  <aside class="ctx" aria-label="Context">
+    <div class="ctx-inner">
+      <div class="ctx-strip">
+        <button class="icon-btn ctx-toggle" type="button" data-ctx-toggle aria-label="Toggle context panel" title="Context">{{icon "expand"}}</button>
+        <span class="ctx-label"><span class="slashes" aria-hidden="true">//</span> Context</span>
+      </div>
+      <div class="ctx-body">{{template "context" .}}</div>
+      <img class="ctx-art" src="{{asset "halftone.svg"}}" alt="" width="360" height="520">
+    </div>
+  </aside>
+  {{end}}
+</div>
+
+<nav class="bottom-bar" aria-label="Main navigation">
+  <a class="bottom-brand" href="{{u "/"}}"><img src="{{asset "badge.svg"}}" alt="OpenBrain" width="22" height="32"></a>
+  <span class="bottom-title">{{template "title" .}}</span>
+  <button class="btn btn-outline btn-xs" type="button" data-sheet-open aria-haspopup="dialog" aria-controls="nav-sheet">{{icon "menu"}}<span>Menu</span></button>
+</nav>
+<dialog class="sheet" id="nav-sheet" aria-label="Navigation">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <a class="btn btn-primary btn-sm btn-block" href="{{u "/projects?new"}}#new"><span>New project</span>{{icon "plus"}}</a>
+  {{template "nav" .}}
+  <div class="sheet-foot"><button class="btn btn-outline btn-xs" type="button" data-sheet-close aria-label="Close menu">{{icon "close"}}<span>Close</span></button></div>
+</dialog>
+</body>
+</html>
+{{end}}
+
+{{define "nav"}}
+<div class="nav-group">
+  <span class="tag">Workspace</span>
+  <a class="nav-row{{if eq .Nav "overview"}} active{{end}}" href="{{u "/"}}"{{if eq .Nav "overview"}} aria-current="page"{{end}} title="Overview">{{icon "overview"}}<span class="nav-label">Overview</span></a>
+  <a class="nav-row{{if eq .Nav "projects"}} active{{end}}" href="{{u "/projects"}}"{{if eq .Nav "projects"}} aria-current="page"{{end}} title="Projects">{{icon "projects"}}<span class="nav-label">Projects</span></a>
+  <a class="nav-row{{if eq .Nav "activity"}} active{{end}}" href="{{u "/activity"}}"{{if eq .Nav "activity"}} aria-current="page"{{end}} title="Activity">{{icon "activity"}}<span class="nav-label">Activity</span></a>
+  <a class="nav-row{{if eq .Nav "agents"}} active{{end}}" href="{{u "/agents"}}"{{if eq .Nav "agents"}} aria-current="page"{{end}} title="Agents">{{icon "agents"}}<span class="nav-label">Agents</span></a>
+</div>
+<div class="nav-group nav-foot">
+  <span class="tag">System</span>
+  {{if .V.User.IsAdmin}}<a class="nav-row{{if eq .Nav "system"}} active{{end}}" href="{{u "/system"}}"{{if eq .Nav "system"}} aria-current="page"{{end}} title="System">{{icon "system"}}<span class="nav-label">System</span></a>{{end}}
+  <a class="nav-row{{if eq .Nav "account"}} active{{end}}" href="{{u "/account"}}"{{if eq .Nav "account"}} aria-current="page"{{end}} title="Account: {{.V.User.Actor.DisplayName}}">{{icon "account"}}<span class="nav-label">Account</span></a>
+  <form method="post" action="{{u "/logout"}}"><button class="nav-row" type="submit" title="Sign out">{{icon "signout"}}<span class="nav-label">Sign out</span></button></form>
+</div>
+{{end}}
+
+{{define "status"}}<span class="st st-{{.}}"><span class="g" aria-hidden="true">{{glyph .}}</span>{{.}}</span>{{end}}
+
+{{define "state"}}<span class="st st-{{.State}}{{if .Stale}} st-stale{{end}}"{{if .Stale}} title="No report for a while; the agent may have stopped"{{end}}><span class="g" aria-hidden="true">{{if .Stale}}{{glyph "stale"}}{{else}}{{glyph .State}}{{end}}</span>{{.State}}{{if .Stale}} · stale{{end}}</span>{{end}}
+
+{{define "actor"}}<span class="who" title="{{.Kind}}">{{.DisplayName}}</span>{{end}}
+
+{{define "category"}}<span class="tag{{if ne . "important"}} tag-outline{{end}}">{{.}}</span>{{end}}
+
+{{define "subnav"}}{{$p := print (u "/p/") .Slug}}
+<nav class="filters subnav" aria-label="Project sections">
+  <a class="chip{{if eq .Active "overview"}} on{{end}}"{{if eq .Active "overview"}} aria-current="page"{{end}} href="{{$p}}">Overview</a>
+  <a class="chip{{if eq .Active "profile"}} on{{end}}"{{if eq .Active "profile"}} aria-current="page"{{end}} href="{{$p}}/profile">Profile</a>
+  <a class="chip{{if eq .Active "updates"}} on{{end}}"{{if eq .Active "updates"}} aria-current="page"{{end}} href="{{$p}}/updates">Updates</a>
+  <a class="chip" href="{{$p}}#notes">Notes</a>
+  <a class="chip" href="{{$p}}#states">Agents</a>
+  <a class="chip" href="{{$p}}#decisions">Decisions</a>
+  <a class="chip" href="{{$p}}#blockers">Blockers</a>
+  <a class="chip" href="{{$p}}#activity">Activity</a>
+</nav>
+{{end}}
+
+{{define "update-body"}}<div class="update-body">{{range paras .}}<p>{{.}}</p>{{end}}</div>{{end}}
+
+{{define "context"}}{{end}}

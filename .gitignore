@@ -1,0 +1,30 @@
+# Build output
+/openbrain
+/openbrain.exe
+/dist/
+/bin/
+
+# Databases, WAL/SHM files and backups
+*.db
+*.db-wal
+*.db-shm
+*.db.pre-restore-*
+*.sqlite
+*.sqlite3
+/backups/
+
+# Local configuration and secrets (the admin token lives in env files)
+.env
+.env.*
+*.env
+!*.env.example
+*.pem
+*.key
+
+# Editors and OS clutter
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db

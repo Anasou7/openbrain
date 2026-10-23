@@ -1,0 +1,19 @@
+{{define "title"}}Set up{{end}}
+
+{{define "content"}}
+<h1 class="divider"><span>First-run setup</span></h1>
+<p class="auth-lede">Create the administrator account. You can add more people afterwards under System.</p>
+{{template "notices" .}}
+<form method="post" action="{{u "/setup"}}" class="form">
+  <label class="field"><span class="label">Username</span>
+    <input class="input" name="username" value="{{.Username}}" required autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="lowercase, e.g. alice" autofocus></label>
+  <label class="field"><span class="label">Display name</span>
+    <input class="input" name="display_name" value="{{.DisplayName}}" autocomplete="name" placeholder="e.g. Alice"></label>
+  <label class="field"><span class="label">Password</span>
+    <input class="input" type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+  <label class="field"><span class="label">Confirm password</span>
+    <input class="input" type="password" name="confirm" required minlength="8" autocomplete="new-password"></label>
+  <button class="btn btn-primary btn-wide" type="submit">Create administrator</button>
+</form>
+<p class="auth-note">At least 8 characters. Passphrases and password managers are welcome.</p>
+{{end}}

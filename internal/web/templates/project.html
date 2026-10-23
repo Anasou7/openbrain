@@ -1,0 +1,230 @@
+{{define "title"}}{{.C.Project.Name}}{{end}}
+{{define "strip"}}<a href="{{u "/projects"}}">Projects</a> <span class="crumb-sep" aria-hidden="true">›</span> {{.C.Project.Slug}}{{end}}
+
+{{define "note"}}
+<li class="entry" id="note-{{.ID}}">
+  <div class="meta">
+    {{template "actor" .Actor}}{{if ne .Kind "note"}} <span class="tag tag-outline">{{.Kind}}</span>{{end}}
+    <time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time>{{if ne .UpdatedAt.String .CreatedAt.String}} <span class="faint-text">edited</span>{{end}}
+    <form method="post" action="{{u "/p/"}}{{.ProjectID}}/notes/{{.ID}}/pin" class="inline">
+      <input type="hidden" name="pinned" value="{{if .Pinned}}0{{else}}1{{end}}">
+      <button class="btn btn-text btn-tiny" type="submit">{{if .Pinned}}Unpin{{else}}Pin{{end}}</button>
+    </form>
+  </div>
+  <div class="prose">{{.Content}}</div>
+</li>
+{{end}}
+
+{{define "content"}}{{$p := .C.Project}}
+<header class="page-head">
+  <h1 class="title">{{$p.Name}}</h1>
+  {{template "status" $p.Status}}
+</header>
+{{with $p.Description}}<p class="lede prose">{{.}}</p>{{end}}
+
+<dl class="facts">
+  <div><dt class="label">Current focus</dt><dd class="prose">{{or $p.CurrentFocus "—"}}</dd></div>
+  <div><dt class="label">Repository</dt><dd>{{with $p.RepoURL}}{{if or (hasPrefix . "https://") (hasPrefix . "http://")}}<a href="{{.}}" rel="noopener noreferrer">{{.}}</a>{{else}}<code>{{.}}</code>{{end}}{{else}}—{{end}}</dd></div>
+  <div><dt class="label">Default branch</dt><dd>{{with $p.DefaultBranch}}<code>{{.}}</code>{{else}}—{{end}}</dd></div>
+  <div><dt class="label">Last activity</dt><dd>{{ago $p.LastActivityAt}}</dd></div>
+</dl>
+{{template "subnav" (subnav $p.Slug "overview")}}
+
+<div class="cols">
+<div class="col-main">
+
+  <section class="section snapshot" id="snapshot" aria-labelledby="snap-title">
+    <h2 class="section-title" id="snap-title">Product snapshot</h2>
+    {{if or .Snap.WhatItIs .Snap.ForWhom}}
+    <dl class="kv snapshot-facts">
+      {{with .Snap.WhatItIs}}<dt class="label">What it is</dt><dd class="prose">{{.}}</dd>{{end}}
+      {{with .Snap.ForWhom}}<dt class="label">For</dt><dd class="prose">{{.}}</dd>{{end}}
+      <dt class="label">Focus</dt><dd class="prose">{{or $p.CurrentFocus "—"}}</dd>
+    </dl>
+    <a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/profile"><span>Full profile</span>{{icon "arrow"}}</a>
+    <span class="sub">{{.Snap.Sections}} sections · {{.Snap.Features}} features</span>
+    {{else}}
+    <p class="sub">No profile yet. Ask an agent that can read the repository to fully add this project to OpenBrain, or start the profile yourself.</p>
+    <a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/profile"><span>Open the profile</span>{{icon "arrow"}}</a>
+    {{end}}
+  </section>
+
+  <section class="section latest" id="latest-update" aria-labelledby="latest-title">
+    <h2 class="section-title" id="latest-title">Latest update</h2>
+    {{with .C.RecentUpdates}}{{with index . 0}}
+    <article class="update">
+      <h3 class="update-title">{{.Title}}</h3>
+      {{template "update-body" .Summary}}
+      <div class="meta">{{template "actor" .Actor}} {{template "category" .Category}} <time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time></div>
+    </article>
+    {{end}}
+    <a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/updates"><span>View all updates</span>{{icon "arrow"}}</a>
+    {{else}}
+    <p class="sub">No updates yet. Agents publish one when they finish meaningful work; you can too.</p>
+    <a class="btn btn-text" href="{{u "/p/"}}{{$p.Slug}}/updates#publish"><span>Publish an update</span>{{icon "arrow"}}</a>
+    {{end}}
+  </section>
+
+  <section class="section" id="handoffs" aria-labelledby="handoffs-title">
+    <h2 class="section-title" id="handoffs-title">Where everyone left off</h2>
+    {{range .C.LatestHandoffs}}
+    <article class="entry handoff">
+      <div class="meta">
+        {{template "actor" .Actor}}
+        <time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time>
+        {{if or .Branch .CommitSHA}}<span class="facts-inline" title="reported by the actor">{{with .Branch}}<code>{{.}}</code>{{end}}{{with .CommitSHA}} @ <code>{{shortSHA .}}</code>{{end}}</span>{{end}}
+      </div>
+      <p class="prose">{{.Summary}}</p>
+      <dl class="kv">
+        {{with .CurrentTask}}<dt class="label">Task</dt><dd class="prose">{{.}}</dd>{{end}}
+        {{with .CurrentState}}<dt class="label">State</dt><dd class="prose">{{.}}</dd>{{end}}
+        {{with .Blockers}}<dt class="label">Blockers</dt><dd class="prose">{{.}}</dd>{{end}}
+        {{with .NextSteps}}<dt class="label">Next</dt><dd class="prose">{{.}}</dd>{{end}}
+      </dl>
+    </article>
+    {{else}}<p class="sub">No handoffs yet.</p>{{end}}
+    <details class="disclosure">
+      <summary><span class="label">Record where you left off</span></summary>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/handoffs" class="form">
+        <label class="field"><span class="label">Summary</span><textarea class="input" name="summary" rows="3" required placeholder="What you did and where it stands"></textarea></label>
+        <label class="field"><span class="label">Current task</span><input class="input" name="current_task"></label>
+        <label class="field"><span class="label">Next steps</span><textarea class="input" name="next_steps" rows="2"></textarea></label>
+        <label class="field"><span class="label">Blockers</span><textarea class="input" name="blockers" rows="2"></textarea></label>
+        <div><button class="btn btn-primary" type="submit">Save handoff</button></div>
+      </form>
+    </details>
+  </section>
+
+  <section class="section" id="notes" aria-labelledby="notes-title">
+    <h2 class="section-title" id="notes-title">Notes</h2>
+    <form method="post" action="{{u "/p/"}}{{$p.Slug}}/notes" class="form note-form">
+      <label class="field"><span class="label">New note, as {{.V.User.Actor.DisplayName}}</span>
+        <textarea class="input" name="content" rows="3" required placeholder="Add a note…"></textarea></label>
+      <div class="row">
+        <label class="check"><input type="checkbox" name="pinned"> Pin</label>
+        <label class="inline-field"><span class="label">Kind</span><input class="input input-sm" name="kind" placeholder="note" size="10"></label>
+        <button class="btn btn-primary btn-sm" type="submit">Add note</button>
+      </div>
+    </form>
+    {{with .C.PinnedNotes}}<h3 class="label sub-head">Pinned</h3><ul class="entries">{{range .}}{{template "note" .}}{{end}}</ul>{{end}}
+    {{with .C.HumanNotes}}<h3 class="label sub-head">From people</h3><ul class="entries">{{range .}}{{template "note" .}}{{end}}</ul>{{end}}
+    <h3 class="label sub-head">All notes</h3>
+    <ul class="entries">{{range .Notes}}{{template "note" .}}{{else}}<li class="sub">No notes yet.</li>{{end}}</ul>
+  </section>
+
+  <section class="section" id="decisions" aria-labelledby="decisions-title">
+    <h2 class="section-title" id="decisions-title">Decisions</h2>
+    <ul class="entries">
+    {{range .Decisions}}
+      <li class="entry">
+        <div class="meta">{{template "actor" .Actor}} <time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time></div>
+        <p class="prose strong">{{.Decision}}</p>
+        {{with .Reasoning}}<p class="prose sub">{{.}}</p>{{end}}
+      </li>
+    {{else}}<li class="sub">No decisions recorded.</li>{{end}}
+    </ul>
+    <details class="disclosure">
+      <summary><span class="label">Record a decision</span></summary>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/decisions" class="form">
+        <label class="field"><span class="label">Decision</span><input class="input" name="decision" required></label>
+        <label class="field"><span class="label">Reasoning</span><textarea class="input" name="reasoning" rows="2"></textarea></label>
+        <div><button class="btn btn-primary" type="submit">Record decision</button></div>
+      </form>
+    </details>
+  </section>
+
+  <section class="section">
+    <details class="disclosure">
+      <summary><span class="label">Handoff history ({{len .Handoffs}})</span></summary>
+      <ul class="entries">
+      {{range .Handoffs}}
+        <li class="entry">
+          <div class="meta">{{template "actor" .Actor}} <time datetime="{{.CreatedAt}}">{{ago .CreatedAt}}</time>{{with .Branch}} <code>{{.}}</code>{{end}}{{with .CommitSHA}} @ <code>{{shortSHA .}}</code>{{end}}</div>
+          <p class="prose">{{.Summary}}</p>
+          {{with .NextSteps}}<p class="prose sub">Next: {{.}}</p>{{end}}
+        </li>
+      {{end}}
+      </ul>
+    </details>
+  </section>
+</div>
+
+<aside class="col-side" aria-label="Project status">
+  <section class="side-section" id="states">
+    <h2 class="label side-head">Agent states</h2>
+    {{range .C.ActorStates}}
+    <div class="state-row">
+      <div class="agent-head">{{template "actor" .Actor}}{{template "state" .}}</div>
+      {{with .CurrentTask}}<div class="prose">{{.}}</div>{{end}}
+      <div class="sub">updated {{ago .UpdatedAt}}{{if not .StartedAt.IsZero}} · started {{ago .StartedAt}}{{end}}{{if not .FinishedAt.IsZero}} · finished {{ago .FinishedAt}}{{end}}</div>
+    </div>
+    {{else}}<p class="sub">No agent has reported a state.</p>{{end}}
+  </section>
+
+  <section class="side-section" id="blockers">
+    <h2 class="label side-head">Blockers</h2>
+    <ul class="entries">
+    {{range .C.OpenBlockers}}
+      <li class="entry">
+        <div class="meta"><span class="warn" aria-hidden="true">▲</span> {{template "actor" .Actor}} <time datetime="{{.CreatedAt}}">{{ago .CreatedAt}}</time></div>
+        <div class="prose">{{.Description}}</div>
+        <form method="post" action="{{u "/p/"}}{{$p.Slug}}/blockers/{{.ID}}" class="row">
+          <input type="hidden" name="resolved" value="1">
+          <input class="input input-sm grow" name="resolution" placeholder="Resolution (optional)" aria-label="Resolution">
+          <button class="btn btn-outline btn-xs" type="submit">Resolve</button>
+        </form>
+      </li>
+    {{else}}<li class="sub">Nothing blocking.</li>{{end}}
+    </ul>
+    <form method="post" action="{{u "/p/"}}{{$p.Slug}}/blockers" class="row">
+      <input class="input input-sm grow" name="description" required placeholder="Add a blocker…" aria-label="New blocker">
+      <button class="btn btn-outline btn-xs" type="submit">Add</button>
+    </form>
+    {{with .Resolved}}
+    <details class="disclosure">
+      <summary><span class="label">Recently resolved</span></summary>
+      <ul class="entries">
+      {{range .}}
+        <li class="entry">
+          <div class="prose"><s>{{.Description}}</s></div>
+          <div class="sub">✓ {{.ResolvedBy.DisplayName}} {{ago .ResolvedAt}}{{with .Resolution}}: {{.}}{{end}}</div>
+          <form method="post" action="{{u "/p/"}}{{$p.Slug}}/blockers/{{.ID}}" class="inline">
+            <input type="hidden" name="resolved" value="0">
+            <button class="btn btn-text btn-tiny" type="submit">Reopen</button>
+          </form>
+        </li>
+      {{end}}
+      </ul>
+    </details>
+    {{end}}
+  </section>
+
+  <section class="side-section" id="activity">
+    <h2 class="label side-head">Activity</h2>
+    <ol class="timeline">
+    {{range .Activity}}
+      <li><time class="sub" datetime="{{.CreatedAt}}">{{ago .CreatedAt}}</time>
+        <span>{{template "actor" .Actor}} {{.Summary}}{{with via .Via}} <span class="tag tag-outline">{{.}}</span>{{end}}</span></li>
+    {{end}}
+    </ol>
+  </section>
+
+  <section class="side-section" id="edit">
+    <details class="disclosure">
+      <summary><span class="label">Edit project</span></summary>
+      <form method="post" action="{{u "/p/"}}{{$p.Slug}}/edit" class="form">
+        <label class="field"><span class="label">Name</span><input class="input" name="name" value="{{$p.Name}}" required></label>
+        <label class="field"><span class="label">Slug</span><input class="input" name="slug" value="{{$p.Slug}}" required></label>
+        <label class="field"><span class="label">Status</span>
+          <select class="input" name="status">{{range .Statuses}}<option{{if eq . $p.Status}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+        <label class="field"><span class="label">Current focus</span><textarea class="input" name="current_focus" rows="2">{{$p.CurrentFocus}}</textarea></label>
+        <label class="field"><span class="label">Description</span><textarea class="input" name="description" rows="3">{{$p.Description}}</textarea></label>
+        <label class="field"><span class="label">Repository URL</span><input class="input" name="repo_url" value="{{$p.RepoURL}}"></label>
+        <label class="field"><span class="label">Default branch</span><input class="input" name="default_branch" value="{{$p.DefaultBranch}}"></label>
+        <div><button class="btn btn-primary btn-sm" type="submit">Save</button></div>
+      </form>
+    </details>
+  </section>
+</aside>
+</div>
+{{end}}

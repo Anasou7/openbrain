@@ -1,0 +1,51 @@
+# OpenBrain behind Caddy, which obtains and renews HTTPS certificates
+# automatically. Use ONE of the blocks. OpenBrain itself listens on
+# 127.0.0.1:8080 (OPENBRAIN_ADDR); Caddy is the only public entry point.
+
+# --- A: OpenBrain owns a host --------------------------------------------
+# OPENBRAIN_BASE_PATH=/
+brain.example.com {
+	reverse_proxy 127.0.0.1:8080
+}
+
+# --- B: OpenBrain under a path on a shared host ---------------------------
+# OPENBRAIN_BASE_PATH=/openbrain
+# "handle" (not "handle_path") keeps the /openbrain prefix on the request,
+# which is what OpenBrain expects. path_regexp is case-sensitive (the path
+# matcher is not), so only /openbrain/... reaches OpenBrain. Other sites
+# keep working beside it.
+example.com {
+	redir /openbrain /openbrain/ permanent
+	@openbrain path_regexp ^/openbrain/
+	handle @openbrain {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle {
+		# your other site(s)
+		respond "Not found" 404
+	}
+}
+
+# --- C: no domain, just the server's public IP address ----------------------
+# Same as B, with a publicly trusted Let's Encrypt IP-address certificate.
+# Let's Encrypt issues those only with the 6-day "shortlived" profile (Caddy
+# 2.11 or newer); Caddy renews them by itself and swaps them in without a
+# restart. Use the server's real address; port 80 must be reachable for the
+# HTTP-01 challenge. Without the tls block, Caddy would use its own
+# untrusted CA for an IP address.
+#
+# 203.0.113.10 {
+# 	tls {
+# 		issuer acme {
+# 			profile shortlived
+# 		}
+# 	}
+# 	redir /openbrain /openbrain/ permanent
+# 	@openbrain path_regexp ^/openbrain/
+# 	handle @openbrain {
+# 		reverse_proxy 127.0.0.1:8080
+# 	}
+# 	handle {
+# 		respond "Not found" 404
+# 	}
+# }

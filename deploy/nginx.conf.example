@@ -1,0 +1,42 @@
+# OpenBrain behind nginx. Use ONE of the two server blocks, add your TLS
+# certificate (e.g. with certbot), and keep OpenBrain on 127.0.0.1:8080.
+# The headers below let OpenBrain see the real client and scheme; it only
+# trusts them from OPENBRAIN_TRUSTED_PROXIES (default: this machine).
+
+# --- A: OpenBrain owns a host  (OPENBRAIN_BASE_PATH=/) ----------------------
+server {
+    listen 443 ssl;
+    server_name brain.example.com;
+    # ssl_certificate     /etc/letsencrypt/live/brain.example.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/brain.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 2m;
+    }
+}
+
+# --- B: OpenBrain under /openbrain on a shared host  (OPENBRAIN_BASE_PATH=/openbrain)
+server {
+    listen 443 ssl;
+    server_name example.com;
+    # ssl_certificate ...; ssl_certificate_key ...;
+
+    # No URI after proxy_pass: the /openbrain prefix is passed through
+    # unchanged, which is what OpenBrain expects.
+    location /openbrain/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 2m;
+    }
+    location = /openbrain { return 301 /openbrain/; }
+
+    location / {
+        # your other site(s)
+    }
+}

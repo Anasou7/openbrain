@@ -1,0 +1,36 @@
+{{define "title"}}Activity{{end}}
+{{define "strip"}}Activity{{if .Paged}} <span class="crumb-sep" aria-hidden="true">›</span> Older{{end}}{{end}}
+
+{{define "content"}}
+<div class="section-head first">
+  <h1 class="title">Activity</h1>
+  {{if .Paged}}<a class="btn btn-text" href="{{u "/activity"}}"><span>Latest</span>{{icon "arrow"}}</a>{{end}}
+</div>
+<p class="lede">Every meaningful change across all projects, newest first, with who made it and how it arrived.</p>
+
+{{if .Feed}}
+<div class="table-wrap">
+  <table class="table">
+    <thead><tr><th scope="col">When</th><th scope="col">Project</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Via</th></tr></thead>
+    <tbody>
+    {{range .Feed}}
+      <tr>
+        <td class="sub nowrap"><time datetime="{{.CreatedAt}}" title="{{.CreatedAt}}">{{ago .CreatedAt}}</time></td>
+        <td class="nowrap"><a class="row-link" href="{{u "/p/"}}{{.ProjectSlug}}">{{.ProjectName}}</a></td>
+        <td class="nowrap">{{template "actor" .Actor}}</td>
+        <td class="wrap">{{.Summary}}</td>
+        <td class="sub nowrap">{{with via .Via}}{{.}}{{else}}dashboard{{end}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{with .Older}}<div class="pager"><a class="btn btn-outline btn-sm" href="{{u "/activity?before="}}{{.}}"><span>Older</span>{{icon "arrow"}}</a></div>{{end}}
+{{else}}
+<div class="empty">
+  <span class="empty-glyph" aria-hidden="true">○</span>
+  <h2 class="subtitle">Nothing has happened yet</h2>
+  <p>Notes, handoffs, decisions and blockers will appear here as people and agents record them.</p>
+</div>
+{{end}}
+{{end}}

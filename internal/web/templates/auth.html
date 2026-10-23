@@ -1,0 +1,29 @@
+{{define "page"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{template "title" .}} · OpenBrain</title>
+<link rel="icon" href="{{asset "badge.svg"}}" type="image/svg+xml">
+<link rel="preload" href="{{u "/static/fonts/league-gothic.woff2"}}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{{asset "style.css"}}">
+</head>
+<body class="auth-body">
+<main class="auth">
+  <div class="auth-panel">
+    <a class="brand auth-brand" href="{{u "/"}}" aria-label="OpenBrain">
+      <img class="badge" src="{{asset "badge.svg"}}" alt="" width="34" height="49">
+      <span class="wordmark" aria-hidden="true">Open<br>Brain</span>
+    </a>
+    {{template "content" .}}
+  </div>
+  <p class="auth-foot"><span>OpenBrain</span><span aria-hidden="true">·</span><span>Shared project state for people and agents</span></p>
+</main>
+</body>
+</html>
+{{end}}
+
+{{define "notices"}}
+{{with .Err}}<p class="flash flash-err" role="alert">{{.}}</p>{{end}}
+{{if .Insecure}}<p class="notice" role="note"><span aria-hidden="true">▲</span> This connection is not encrypted. Don't send account credentials over plain HTTP across the internet; use HTTPS or a private network.</p>{{end}}
+{{end}}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 520" width="360" height="520">
+  <!-- Decorative halftone for the context rail: a rising orb over a ruled horizon,
+       built from three dot screens of decreasing size. Original artwork. -->
+  <defs>
+    <pattern id="d1" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="2.4" fill="#fff"/></pattern>
+    <pattern id="d2" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.5" fill="#fff"/></pattern>
+    <pattern id="d3" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="0.8" fill="#fff"/></pattern>
+    <radialGradient id="core" cx="40%" cy="38%" r="55%">
+      <stop offset="0" stop-color="#fff"/><stop offset="0.45" stop-color="#fff" stop-opacity="0.85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mid" cx="40%" cy="38%" r="75%">
+      <stop offset="0.35" stop-color="#fff" stop-opacity="0"/><stop offset="0.6" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="0.8" stop-color="#fff" stop-opacity="0.9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="m1"><circle cx="190" cy="260" r="120" fill="url(#core)"/></mask>
+    <mask id="m2"><circle cx="190" cy="260" r="120" fill="url(#mid)"/></mask>
+    <mask id="m3"><circle cx="190" cy="260" r="190" fill="url(#halo)"/></mask>
+    <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="0.9"/></linearGradient>
+    <mask id="m4"><rect x="0" y="380" width="360" height="140" fill="url(#fade)"/></mask>
+  </defs>
+  <rect width="360" height="520" fill="url(#d3)" mask="url(#m3)"/>
+  <rect width="360" height="520" fill="url(#d2)" mask="url(#m2)"/>
+  <rect width="360" height="520" fill="url(#d1)" mask="url(#m1)"/>
+  <g stroke="#fff" stroke-width="1" mask="url(#m4)">
+    <path d="M0 392h360M0 404h360M0 418h360M0 434h360M0 452h360M0 472h360M0 494h360M0 518h360"/>
+    <path d="M180 380 0 520M180 380 60 520M180 380 120 520M180 380 180 520M180 380 240 520M180 380 300 520M180 380 360 520"/>
+  </g>
+</svg>
