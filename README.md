@@ -1,9 +1,18 @@
 # OpenBrain
 
-**Shared project and operations memory for you and your AI agents.** One small self-hosted
-server that Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
+**Not another AI memory layer** 
+
+One small self-hosted server that Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
 agent read and write, so every agent knows what each project is, where the
 work stands and what changed, without syncing code between machines.
+
+OpenBrain doesn't store chat transcripts and hope semantic search finds the right thing later.
+
+It stores structured project understanding.
+
+A coding agent can inspect a repository once and build a durable Project Profile describing the product, features, audience, integrations, limitations, workflows, and other important context.
+
+After that, agents keep OpenBrain current as they work.
 
 ![OpenBrain overview: projects against people and agents](docs/images/overview.png)
 
@@ -64,11 +73,6 @@ thinking and OpenBrain remembers.
 | Profile | Updates |
 |---------|---------|
 | ![A project's profile: coverage checklist, knowledge sections and features](docs/images/profile.png) | ![A project's Updates page, grouped by day like patch notes](docs/images/updates.png) |
-
-## What the plans for OpenBrain are
-
-This won't be another memory layer for AI Agents. It will be a fully functional operations layer where work done by all AI Agents and assistants will show up on the dashboard, both agents and the user will be informed about everything.
-Everyone can use and edit OpenBrain however if a use case is found, I would appreciate if it's shared here so more people can benefit.
 
 ## Installation
 
