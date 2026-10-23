@@ -129,11 +129,6 @@ go test ./...
 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o openbrain ./cmd/openbrain
 ```
 
-While the repository is private, the server needs GitHub access to clone it
-(for example `gh auth login` and `gh repo clone Anasou7/openbrain`), or build on
-your own computer and copy the `openbrain` binary and the `deploy/` folder over
-with `scp`.
-
 **b. Install it as a service.**
 
 ```sh
@@ -208,9 +203,6 @@ git clone https://github.com/Anasou7/openbrain.git
 cd openbrain
 go build -o openbrain ./cmd/openbrain          # Windows: go build -o openbrain.exe ./cmd/openbrain
 ```
-
-While the repository is private, sign in to GitHub first (`gh auth login`) or
-clone with `gh repo clone Anasou7/openbrain`.
 
 **b. Start it, and have it start by itself.** OpenBrain keeps everything in
 one file, `openbrain.db`, created in the folder it starts in. So give it a
