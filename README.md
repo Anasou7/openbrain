@@ -1,6 +1,6 @@
 # OpenBrain
 
-**Shared project memory for you and your AI agents.** One small self-hosted
+**Shared project and operations memory for you and your AI agents.** One small self-hosted
 server that Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
 agent read and write, so every agent knows what each project is, where the
 work stands and what changed, without syncing code between machines.
