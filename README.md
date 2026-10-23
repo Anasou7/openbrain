@@ -12,7 +12,7 @@ work stands and what changed, without syncing code between machines.
 - [Everyday use](#everyday-use)
 - [Reference](#reference): tools, configuration, commands, security, backups
 
-## What OpenBrain is
+## What OpenBrain currently is
 
 If you work on the same projects with several AI agents, each one starts every
 session cold. None of them knows what the others did yesterday, what was
@@ -64,6 +64,11 @@ thinking and OpenBrain remembers.
 | Profile | Updates |
 |---------|---------|
 | ![A project's profile: coverage checklist, knowledge sections and features](docs/images/profile.png) | ![A project's Updates page, grouped by day like patch notes](docs/images/updates.png) |
+
+## What the plans for OpenBrain are
+
+This won't be another memory layer for AI Agents. It will be a fully functional operations layer where work done by all AI Agents and assistants will show up on the dashboards, both agents and the user will be informed about everything.
+Everyone can use and edit OpenBrain however if a use case is found, I would appreciate if it's shared here so more people can benefit.
 
 ## Installation
 
