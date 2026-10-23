@@ -75,7 +75,7 @@ The first public release.
 
 ### Interfaces
 - **Dashboard:** server-rendered, no JavaScript framework, self-hosted fonts,
-  and a strict Content Security Policy. The visual system is in `DESIGN.md`.
+  and a strict Content Security Policy.
 - **MCP server** at `/mcp`: Streamable HTTP, 19 tools, the stateless
   2026-07-28 protocol plus the legacy `initialize` handshake. Agents
   authenticate with their own actor tokens, so every write is attributable.

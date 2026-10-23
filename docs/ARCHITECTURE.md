@@ -213,8 +213,7 @@ get a content-hash query (`?v=`) and are cached as immutable.
 Server-rendered `html/template` pages, with no JavaScript framework and no
 build step. All data and forms work without JavaScript; `app.js` (about 2 KB)
 adds the collapsible rail, copy buttons and the phone-width menu sheet (the
-one piece that needs it). The visual
-system follows [DESIGN.md](../DESIGN.md): monochrome tokens as CSS custom
+one piece that needs it). The interface uses monochrome tokens as CSS custom
 properties, a framed shell with a left rail, a right context rail that
 collapses below 1400 px, and a bottom bar with a menu sheet below 1024 px.
 Status is never colour-only: each state has a glyph and a word. The fonts,

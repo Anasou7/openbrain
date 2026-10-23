@@ -44,7 +44,7 @@ Go 1.25 or newer is required, because the MCP SDK needs it.
   only as themselves.
 - **Tool descriptions are product.** Say when to use a tool, not just what it
   does. Never invite models to store private reasoning or transcripts.
-- **Follow DESIGN.md for anything visual.** Use the CSS tokens in
+- **Keep the visual style consistent.** Use the CSS tokens in
   `style.css`, keep status readable without colour, and don't add a
   JavaScript framework or external assets.
 - **Never store or log secrets.** Passwords are Argon2id hashes, session and
