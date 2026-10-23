@@ -1,9 +1,15 @@
-# OpenBrain instructions for Hermes
+# OpenBrain instructions for Hermes and OpenClaw
 
-Paste everything below the line into `SOUL.md` in your Hermes home (loaded in
-every session), or into a project's `AGENTS.md` or `.hermes.md`. Assumes the
-`openbrain` MCP server is configured with Hermes' own actor token
-([MCP.md](../MCP.md)).
+Paste everything below the line into the assistant's standing instructions,
+which it loads in every session:
+
+- **Hermes:** `SOUL.md` in your Hermes home (and in each profile you use), or
+  a project's `AGENTS.md` or `.hermes.md`.
+- **OpenClaw:** `AGENTS.md` in its workspace (`~/.openclaw/workspace/`, and in
+  each agent's workspace if you run several).
+
+Assumes the `openbrain` MCP server is configured with the assistant's own
+actor token ([MCP.md](../MCP.md)).
 
 ---
 
