@@ -1,9 +1,9 @@
 # OpenBrain
 
 **Not another AI memory layer** 
-
-One small self-hosted server that Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
-agent read and write, so every agent knows what each project is, where the
+OpenBrain is small self-hosted shared project context layer for humans and AI agents.
+Claude Code, Codex, OpenCode, Hermes, OpenClaw and any other MCP
+agent can read and write, so every agent knows what each project is, where the
 work stands and what changed, without syncing code between machines.
 
 OpenBrain doesn't store chat transcripts and hope semantic search finds the right thing later.
@@ -21,7 +21,7 @@ After that, agents keep OpenBrain current as they work.
 - [Everyday use](#everyday-use)
 - [Reference](#reference): tools, configuration, commands, security, backups
 
-## What OpenBrain currently is
+## What OpenBrain is
 
 If you work on the same projects with several AI agents, each one starts every
 session cold. None of them knows what the others did yesterday, what was
