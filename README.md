@@ -676,15 +676,6 @@ About 20–30 MB of RAM and no background CPU. Typical requests take 3–5 ms on
 - [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md),
   [SECURITY.md](SECURITY.md)
 
-## Design and credits
-
-The dashboard's visual language (monochrome, ruled, condensed type) follows
-[DESIGN.md](DESIGN.md), which was modelled on the public Nous Portal. OpenBrain
-is an independent project and is **not affiliated with Nous Research**. It
-ships its own artwork and none of the reference's proprietary fonts, images or
-code. Fonts are League Gothic and Geist Mono, both under the SIL Open Font
-License (see `internal/web/static/fonts/`).
-
 ## License
 
 [MIT](LICENSE)
