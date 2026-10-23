@@ -17,7 +17,7 @@ and what changed, without syncing code between machines.
 If you work on the same projects with several AI agents, each one starts every
 session cold. None of them knows what the others did yesterday, what was
 decided, or what is blocked. An assistant that never sees the repository, such
-as a Hermes bot that writes your marketing, knows even less about what the
+as Hermes or OpenClaw that writes your marketing, knows even less about what the
 product does.
 
 OpenBrain is where that knowledge lives. It is one Go binary and one SQLite
